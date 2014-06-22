@@ -167,6 +167,9 @@ public class MorseCodeTrack{
 		morseCode.stop();
 		morseCode.flush();
 	}
+	public void releaseTrack(){
+		morseCode.release();
+	}
 	
 	public long[] getVibrateTrack(){
 		return vibrateConversion;

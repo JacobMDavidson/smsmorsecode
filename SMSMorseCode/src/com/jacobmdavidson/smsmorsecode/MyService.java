@@ -6,22 +6,18 @@ import java.util.Locale;
 import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioTrack;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
-import android.os.SystemClock;
 import android.os.Vibrator;
 import android.provider.ContactsContract.PhoneLookup;
 import android.speech.tts.TextToSpeech;
@@ -29,61 +25,156 @@ import android.speech.tts.TextToSpeech.OnInitListener;
 import android.speech.tts.TextToSpeech.OnUtteranceCompletedListener;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
-import android.util.Log;
+
 /**
- * @ TODO
- * onstart instantiate the MorseCodeTrack
- * On each subsequent call to onutterence completed, initialize the audiotrack to the new string without instantiating a new morsecodetrack
- * @author jacobdavidson
- *
+ * <p>This class instantiates a service that converts sms text messages sent via a broadcast receiver 
+ * to Morse Code. The class respects the users ringer settings via the following:</p> 
+ * <ol><li> If the ringer is set to normal, this service audibly plays the converted morse code.</li>
+ * <li>If the ringer is set to vibrate, this service vibrates the converted morse code.</li>
+ * <li>If the ringer is set to silent, this service is immediately destoryed.</li></ol>
+ * <p>If a call is received while the service is running, the ringer is set back to the
+ * initial user preferences, and the service is destroyed.</p>
+ * @author Jacob Davidson
+ * @version 1.0.0
  */
 
-//@ TODO may not need OnUtteranceComleted
-
 @SuppressWarnings("deprecation")
-public class MyService extends Service implements OnInitListener, OnUtteranceCompletedListener, AudioTrack.OnPlaybackPositionUpdateListener, OnAudioFocusChangeListener {
-	TextToSpeech ttobj; //Must use in custom service
-	String sender;
-	String body;
-	//String morseCodePattern;
-	//AudioTrack morseCode;
-	int ringerPreference;
-	Queue<Intent> messages;
-	private SharedPreferences sharedPrefs;
-	MorseCodeTrack morseCodeTrack;
-	AudioManager am;
-	OnAudioFocusChangeListener afChangeListener;
-	Vibrator v;
-	long[] track;
-	Timer myTimer;
-	boolean vibrateFlag = false;
+public class MyService extends Service implements OnInitListener, 
+		OnUtteranceCompletedListener, AudioTrack.OnPlaybackPositionUpdateListener, 
+		OnAudioFocusChangeListener {
+
+	// Used to speak the sender's name or phone number
+	private TextToSpeech textToSpeech;
 	
+	// The sender and body for each text message to be played
+	private String sender, body;
+	
+	// Stores the ringer setting prior to playing the morsecode
+	private int ringerPreference;
+	
+	// Stores the queue of messages to be played
+	private Queue<Intent> messages;
+	
+	// Stores the saved Shared preferences as set in the applications main activity
+	private SharedPreferences sharedPrefs;
+	
+	// Stores the body converted to a morse code track for play back or vibration
+	private MorseCodeTrack morseCodeTrack;
+	
+	// Stores the AudioManager object from which the ringer settings are determined
+	private AudioManager audioManager;
+	
+	// Used to vibrate the morse code track when ringerPreference is vibrate
+	private Vibrator vibrator;
+	 
+	//private long[] track;
+	
+	// Timer used to play back each vibration in the queue
+	private Timer myTimer;
+	
+	// Flag used to determine if vibration is already running
+	private boolean vibrateFlag = false;
+	
+	// Used to listen to the phone state (ringing, off hook, etc)
 	private PhoneStateListener phoneListener;
 	
-	// SettingsContentObserver to listen for changes in volume
+	// Used to listen for changes in volume
 	private SettingsContentObserver mSettingsContentObserver;
+	private TelephonyManager telephonyManager;
 	
-	
-	private TelephonyManager tm;
+	/**
+	 * This service is not bound to an activity. Everything happens in the background
+	 */
 	@Override
 	public IBinder onBind(Intent arg0) {
 		return null;
 	}
+	
+	/**
+	 * OnCreate is only called when the service is initially started. Instiantiate the messages queue,
+	 * get the shared preferences, instantiate the morse code track, Check the ringer mode to determine id
+	 * this will be a vibrate morse code message, audio morse code message, or if this service will be destroyed.
+	 * For an audio message set up the SettingsContentObserver to detect changes in volume, request audio focus
+	 * of the music stream, and initialize the text to speech engine. For a vibrate message instantiate a timer 
+	 * used to check for another message when vibration is complete, and instantiate the Vibrator object. Finally, 
+	 * set the ringer mode to silent to prevent notifications for incoming text messages to be played and set
+	 * up a telephony manager that listens for incoming calls, and calls the incomingCall method when it detects
+	 * one.
+	 */
 	@Override
 	public void onCreate() {	
+		
+		// Initialize the queue that will store messaged
 		messages = new LinkedList<Intent>();
 		
-		// Get saved preferences
+		// Get shared preferences as set in the main activity
 		sharedPrefs = getSharedPreferences("com.jacobmdavidson.smsmorsecode", MODE_PRIVATE);
-		v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-		phoneListener = new PhoneStateListener(){
+		
+		// Instantiate the audiomanager and set the ringerPreference before the service begins
+    	audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+    	ringerPreference = audioManager.getRingerMode();
+
+		//Get the shared frequency and speedSettings, and instantiate the morseCodeTrack
+		int frequencySetting = sharedPrefs.getInt("FrequencySetting", Constants.DEFAULT_FREQUENCY);
+		int speedSetting = sharedPrefs.getInt("SpeedSetting", Constants.DEFAULT_SPEED);
+		double freqHz = MainActivity.getFrequency(frequencySetting);
+		int wordsPerMinute = MainActivity.getWordsPerMinute(speedSetting);		  
+    	morseCodeTrack = new MorseCodeTrack("", freqHz, wordsPerMinute);		
+
+    	// If the ringerPreference is set to silent, stop the service
+    	if(ringerPreference == AudioManager.RINGER_MODE_SILENT){
+    		this.stopSelf();
+    	}
+    	
+    	// If the ringerPreference is set to normal, play the morse code audio track
+    	else if(ringerPreference == AudioManager.RINGER_MODE_NORMAL){
+    		/* 
+    		 * Instantiate the settingsContentObserver and register it to detect volume 
+    		 * changes (volume down will be used to stop the service)
+    		 */
+    		mSettingsContentObserver = new SettingsContentObserver(this,new Handler());
+    		getApplicationContext().getContentResolver().registerContentObserver(
+    				android.provider.Settings.System.CONTENT_URI, true, mSettingsContentObserver );
+    		
+    		/*
+    		 * Request audio focus of the music stream to temporarily stop music while
+    		 * the morse code track is played, and set it to listen for audio changes
+    		 */
+    		audioManager.requestAudioFocus(this,
+                    // Use the music stream.
+                    AudioManager.STREAM_MUSIC,
+                    // Request permanent focus.
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+    		
+    		// Instantiate the textToSpeech object used to speak the name or number of the sender
+    		textToSpeech = new TextToSpeech(this, this);
+    	} 
+    	
+    	// Else, the ringer preference is set to vibrate, vibrate the morse code track
+    	else {
+    		/*
+    		 * Instantiate a timer used to check for the next message after vibration of the current 
+    		 * message is done
+    		 */
+    		myTimer = new Timer();
+    		
+    		// Instantiate the vibrator
+    		vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+    	}
+    	
+    	// Set the ringer mode to silent to silence incoming text message notifications
+    	audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
+    	
+    	/*
+    	 *  Instantiate a PhoneStateListener that calls the incomingCall() method if the phone
+    	 *  state changes to ringing or offhook
+    	 */
+    	phoneListener = new PhoneStateListener(){
 			@Override
 			public void onCallStateChanged(int state, String incomingNumber) {
 				switch(state){
-					//If the phone is not idle, stop the service
 					case TelephonyManager.CALL_STATE_RINGING:
 					case TelephonyManager.CALL_STATE_OFFHOOK:
-						Log.d(Constants.LOG, "end");
 						incomingCall();
 						break;
 					default:
@@ -92,392 +183,335 @@ public class MyService extends Service implements OnInitListener, OnUtteranceCom
 				
 			}
 		};
-		tm = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
-		
-		/**
-		 *  Load the audioTrack
-		 */
-		double freqHz;
-		int wordsPerMinute;
-		//Get the frequency and set freqHz accordingly
-		int frequencySetting = sharedPrefs.getInt("FrequencySetting", Constants.DEFAULT_FREQUENCY);
-		freqHz = MainActivity.getFrequency(frequencySetting);
-		
-		int speedSetting = sharedPrefs.getInt("SpeedSetting", Constants.DEFAULT_SPEED);
-		
-		// Determine duration per unit based on 'PARIS' method (50 units makes up the word paris
-		// msec/unit = (1 min / number of words) * (1 word / 50 units) * (60000 msec / min)
-		wordsPerMinute = MainActivity.getWordsPerMinute(speedSetting);
-
-       
-    	// Build the AudioTrack and play it
-    	morseCodeTrack = new MorseCodeTrack("", freqHz, wordsPerMinute);		
     	
-    	
-    	am = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-    	ringerPreference = am.getRingerMode();
-    	
-    	
-
-    	if(ringerPreference == AudioManager.RINGER_MODE_SILENT){
-    		this.stopSelf();
-    	}
-    	else if(ringerPreference == AudioManager.RINGER_MODE_NORMAL){
-    		// Instantiate the settingsContentObserver to detect volume change presses
-    		mSettingsContentObserver = new SettingsContentObserver(this,new Handler());
-    		getApplicationContext().getContentResolver().registerContentObserver(
-    				android.provider.Settings.System.CONTENT_URI, true, mSettingsContentObserver );
-    		
-    		am.requestAudioFocus(this,
-                    // Use the music stream.
-                    AudioManager.STREAM_MUSIC,
-                    // Request permanent focus.
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-    		ttobj = new TextToSpeech(this, this);
-    	} else {
-    		// This is a vibrate message, create the timer
-    		myTimer = new Timer();
-    	}
-    	// Turn off the ringer and add the PhoneStateListener
-    	am.setRingerMode(AudioManager.RINGER_MODE_SILENT);
-    	tm.listen(phoneListener, PhoneStateListener.LISTEN_CALL_STATE);
-    	
-
-
-    	
-		
+		// Instantiate the telephonyManager and set the state it should listen for
+		telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
+    	telephonyManager.listen(phoneListener, PhoneStateListener.LISTEN_CALL_STATE);	
 	}
+	
+	/**
+	 * onStart is called each time an intent is sent to the service, add the intent
+	 * to the messages queue and, if the ringer mode is set to vibrate, call getNextMethod
+	 * directly to begin vibration playback. If the ringer mode is set to normal, getNextMethod
+	 * will be called in the onInit method when the text to speech engine has been initialized
+	 */
 	@Override
 	public void onStart(Intent intent, int startId) {
-		Log.d(Constants.LOG, "onStart Called");
+		
+		// Add the intent to the messages queue
 		messages.add(intent);	
-		// if it's a vibrate message, call getNextMessage() directly
+		
+		/*
+		 *  If the ringerPreference is Vibrate, and this is the first time onStart is called, 
+		 *  set the vibrateFlag to true and call getNextMessage() directly
+		 */
 		if(ringerPreference == AudioManager.RINGER_MODE_VIBRATE && !vibrateFlag){
 			vibrateFlag = true;
 			getNextMessage();
 		}
 	}
 	
+	/**
+	 * onInit is called when the TextToSpeech engine initialization is complete. Determine
+	 * if initialization was a success, and if so, call getNextMessage 
+	 */
+	@Override
+	public void onInit(int status) {
+		
+		/*
+		 * Add a listener to the textToSpeech object to listen for when the utterence is complete
+		 */
+		textToSpeech.setOnUtteranceCompletedListener(this);
+	 
+		// If the engine is successfully initialized, set the language to US
+	    if (status == TextToSpeech.SUCCESS) {
+	    	int result = textToSpeech.setLanguage(Locale.US);
+	    	
+	    	// If the setting the language was successful, get the next message
+		    if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
+		        getNextMessage();
+		        
+		    // If setting the language was not successful, display a toast that the language is not supported
+		    } else {
+		    	//@ TODO provide toast stating language error
+		    }
+		    
+		// there was an error in initializing text to speech, display a toast.
+	    } else {
+	        //@ TODO provide toast stating text to speech error
+	    }
+	}
+	
+	/**
+	 * Get the next message, if it's a settings test, set the sender to an empty string. Otherwise
+	 * create a sender string and get the contact name. set the body field to the body of the message.
+	 * If the ringer preference is normal, use textToSpeech to speak the sender (onUtteranceCompleted will
+	 * be called when this is finished). Otherwise, the ringer preference is vibrate, so call the 
+	 * vibrateMorseCode method.
+	 */
 	public void getNextMessage()
 	{
-		
-		Log.d(Constants.LOG, "getNextMessage Called");
+		// Get the Intent at the head of the messages queue
 		Intent intent = messages.poll();
+		
+		// Get the number and caller from the intent
 		String number = intent.getStringExtra("sender");
 		String caller = intent.getStringExtra("caller");
+		
+		// set the sender field accordingly
 		if(caller.equals("MainActivity")){
-			//sender = number;
 			sender = "";
 		} else {
 			sender = "new message from " + getContactName(number);
 		}
+		
+		// set the body field to the body in the Intent
 		body = intent.getStringExtra("body");
-		
-		
-		
-		
+	
+		// If the ringer preference is normal, speak the sender
 		if(ringerPreference == AudioManager.RINGER_MODE_NORMAL){
-			Log.d(Constants.LOG, "wrong one Called");
 			HashMap<String, String>params = new HashMap<String, String>(); 
 			params.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "theUtId");
-			
-			ttobj.speak(sender, TextToSpeech.QUEUE_FLUSH, params);
+			textToSpeech.speak(sender, TextToSpeech.QUEUE_FLUSH, params);
 		
-		//otherwise do vibrate
+		//otherwise, the ringer preference is vibrate. Vibrate the message
 		}else{
-
 			vibrateMorseCode();
-			
 		}
 
 	}
 	
-	@Override
-	public void onDestroy() {
-		
-        Log.d(Constants.LOG, "Service is destroyed");	
-        //super.onDestroy();
-	}
+	/**
+	 * Called when textToSpeech is finished speaking the username or number. Convert
+	 * the body of the message to a morse code track, set a notification marker position
+	 * to the end of the track, and play the audio track. The onMarkerReached method will be
+	 * called when the morse code track is done playing.
+	 */
 	@Override
 	public void onUtteranceCompleted(String arg0) {
-		/*Log.d(Constants.LOG, "utterance completed");
-		//@ TODO figure out why onMarkerReached is not being called
-
-		// Build and play the morse code (try setting the marker here and making sizeInBytes a field
-		String morseCodePattern = MorseCodeConverter.pattern(body);
-	    AudioTrack morseCode = generateMorseCode(morseCodePattern);
-	    
-		morseCode.play();	*/
 		
-		//
-		//
-		//
-
-		/*
-		double freqHz;
-		int wordsPerMinute;
-		//Get the frequency and set freqHz accordingly
-		int frequency = sharedPrefs.getInt("FrequencySetting", Constants.DEFAULT_FREQUENCY);
-		freqHz = MainActivity.getFrequency(frequency);
-		
-		int duration = sharedPrefs.getInt("SpeedSetting", Constants.DEFAULT_SPEED);
-		
-		// Determine duration per unit based on 'PARIS' method (50 units makes up the word paris
-		// msec/unit = (1 min / number of words) * (1 word / 50 units) * (60000 msec / min)
-		wordsPerMinute = MainActivity.getWordsPerMinute(duration);
-
-       
-    	// Build the AudioTrack and play it
-    	MorseCodeTrack morseCodeTrack = new MorseCodeTrack(body, freqHz, wordsPerMinute);*/
+		// Load the morseCodeTrack with the body of the message
 		morseCodeTrack.loadAudioTrack(body);
-		// set setNotificationMarkerPosition according to audio length
-		AudioTrack track = morseCodeTrack.getTrack();
-    	track.setPlaybackPositionUpdateListener(this);
-    	track.setNotificationMarkerPosition(morseCodeTrack.getTotalFrameCount());
-    	morseCodeTrack.playAudioTrack();
-    	//onMarkerReached();
-    	
-	}
-	
-
-	@Override
-	public void onInit(int status) {
-		ttobj.setOnUtteranceCompletedListener(this);
-		 
-	    if (status == TextToSpeech.SUCCESS) {
-	            int result = ttobj.setLanguage(Locale.US);
-	            if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
-	                getNextMessage();
-	            } 
-	     } 
-
-	     
-	}
-	
-	public String getContactName(String mobileno) {
 		
-		Uri uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI,
-					Uri.encode(mobileno));
-		  Cursor cr = getApplicationContext().getContentResolver().query(uri,
-						new String[] { PhoneLookup.DISPLAY_NAME }, null,  
-									 null, null);
-		  String displayName;
-		  if (cr.getCount() > 0) {
-			cr.moveToFirst();
-			displayName = cr.getString(cr
-					.getColumnIndex(PhoneLookup.DISPLAY_NAME));
-		  } else { //Name does not exist, return "readable" version of number
-			  StringBuilder number = new StringBuilder(mobileno);
-			  int idx = number.length() - 4;
-			  number.insert(idx, "-");
-			  idx = idx - 3;
-			  number.insert(idx, "-");
-			  idx = idx - 3;
-			  displayName = number.toString();
-		  }
-		  //Log.d(Constants.LOG, displayName);
-		  return displayName;
-		}
+		// Set a playback position listener for the track
+		morseCodeTrack.getTrack().setPlaybackPositionUpdateListener(this);
+		
+		// Set a notification marker for the end of the track
+		morseCodeTrack.getTrack().setNotificationMarkerPosition(morseCodeTrack.getTotalFrameCount());
+		
+		// Play the morse code audio track
+    	morseCodeTrack.playAudioTrack();
+	}
 	
-	/*
-	private AudioTrack generateMorseCode(String morseCode)
-    {
-    	final double freqHz = (double)((sharedPrefs.getInt("FrequencySetting", 14) + 2) * 50);
-    	int durationMs; // Base duration  
-    	
-    	//Calculate duration
-    	durationMs = 50 * 1000 / (60 * (sharedPrefs.getInt("SpeedSetting", 10) + 5));
-    	
-    	int count = (int)(44100.0 * 2.0 * (durationMs / 1000.0)) & ~1;
-    	int numCharacters = morseCode.length();
-    	
-    	// Total length should be number of frames 
-    	int totalLength = count * numCharacters;
-    	
-    	Log.d("com.jacobmdavidson.smsmorsecode", "count:" + count + " numCharacters:" + numCharacters + " total Length: " + totalLength);
-    	
-    	short[] samples = new short[totalLength];
-    	int bufferSizeInBytes = totalLength * (Short.SIZE / 8);
-    	int location; 
-    	int multiplier;
-    	
-    	for(int i = 0; i < totalLength; i += 2){
-    		location = (i / count);
-    		multiplier = Character.getNumericValue(morseCode.charAt(location));
-    		short sample = (short)(Math.sin(2 * Math.PI * i / (44100.0 / freqHz)) * 0x7FFF * multiplier);
-    		samples[i + 0] = sample;
-    		samples[i + 1] = sample;
-    	}
-    	
-    	// totalLength * (Short.SIZE / 8) is the number of bytes for the sample
-    	AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, 44100,
-    		AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
-    		bufferSizeInBytes, AudioTrack.MODE_STATIC);
-    	track.write(samples, 0, totalLength);
-    	// set setNotificationMarkerPosition according to audio length
-    	track.setPlaybackPositionUpdateListener(this);
-    	
-    	// Not sure why I have to divide by 4.05 (should be / 4 for total frames)
- 	    track.setNotificationMarkerPosition((int)(bufferSizeInBytes / 4.05));
- 	    
-    	return track;
-    }
-    */
+	/**
+	 * Looks up the provided number in the user's contacts and returns the display name if the user is found.
+	 * If the user is not found, returns a formated phone number that the text to speech enginer will read
+	 * correctly.
+	 * @param phoneNumber the number used to lookup the user name
+	 * @return a string with the display name if found, or phone number if user is not in contacts
+	 */
+	public String getContactName(String phoneNumber) {
+		
+		// Perform the query of using the phoneNumber 
+		Uri lookupUri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, 
+				Uri.encode(phoneNumber));
+		Cursor cursor = getApplicationContext().getContentResolver().query(lookupUri, 
+				new String[] { PhoneLookup.DISPLAY_NAME }, null, null, null);
+		
+		String displayName;
+		
+		// If more than one matching numbers were found, select the user name from the first instance.
+		if (cursor.getCount() > 0) {
+			cursor.moveToFirst();
+			displayName = cursor.getString(cursor.getColumnIndex(PhoneLookup.DISPLAY_NAME));
+			
+		// Else the name does not exist, return a readable phone number
+		} else {
+			StringBuilder number = new StringBuilder(phoneNumber);
+			int idx = number.length() - 4;
+			number.insert(idx, "-");
+			idx = idx - 3;
+			number.insert(idx, "-");
+			idx = idx - 3;
+			displayName = number.toString();
+		}
+		
+		return displayName;
+	}
+	
+	/**
+	 * Called when that morse code audio track finishes playing, stop and flush
+	 * the track. If the messages queue is empty, call the terminateAudio method,
+	 * otherwise call the getNextMessage method
+	 */
 	@Override
 	public void onMarkerReached(AudioTrack track) {
-		Log.d("com.jacobmdavidson.smsmorsecode", "marker reached:" + messages.size());
+		
+		// stop and flush the AudioTrack
 		track.stop();
 		track.flush();
+		
+		// if the messages queue is empty, terminate the audio and stop the service
 		if(messages.size() == 0){
 			terminateAudio();
-			//this.stopSelf();
-		}
-		else
+		
+		// else, get the next message and play it
+		} else {
 			getNextMessage();
+		}
 	}
+	
+	/**
+	 * This method is not used
+	 */
 	@Override
 	public void onPeriodicNotification(AudioTrack track) {
-		// TODO Auto-generated method stub
+		// Method is not used
 		
 	}
-
-	/* How MainActivity determines vibration
-	long[] track;
-	AudioManager am = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-	if(am.getRingerMode() == AudioManager.RINGER_MODE_NORMAL)
-		morseCodeTrack.playAudioTrack();
-	else if(am.getRingerMode() == AudioManager.RINGER_MODE_VIBRATE){
-		track = morseCodeTrack.getVibrateTrack();
-		Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-	*/
-    /**
-     * Show a notification while this service is running.
-     
-    @SuppressWarnings("deprecation")
-	private void showNotification() {
-        // In this sample, we'll use the same text for the ticker and the expanded notification
-        CharSequence text = getText(R.string.local_service_started);
-
-        // Set the icon, scrolling text and timestamp
-        Notification notification = new Notification(R.drawable.ic_action_network_wifi_unlock, text,
-                System.currentTimeMillis());
-        
-        Intent i = new Intent(this, MainActivity.class);
-
-        // The PendingIntent to launch our activity if the user selects this notification
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, i, 0);
-        
-        i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP| Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-        // Set the info for the views that show in the notification panel.
-        notification.setLatestEventInfo(this, getText(R.string.local_service_label),
-                       text, contentIntent);
-        
-
-        notification.flags |= Notification.FLAG_NO_CLEAR;
-        // Send the notification.
-        startForeground(1, notification);
-        
-        //mNM.notify(1337, notification);
-        
-        //Log.d(Constants.LOG, "Notification should be showing");
-        
-    }
-	*/
-
 	
-	
-	//This now works
+	/**
+	 * Listens for audio focus changes, and if the focus change is
+	 * AUDIOFOCUS_LOSS_TRANSIENT or AUDIOFOCUS_LOSS, it terminates the audio
+	 * which also stops the service
+	 */
     public void onAudioFocusChange(int focusChange) {
-    	
     	switch(focusChange){
-    	
 	    	case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
 	    	case AudioManager.AUDIOFOCUS_LOSS:
 	        	terminateAudio();
-	            //this.stopSelf();
 	            break;
 	        default:
 	        	break;
         }
-
     }
     
-    // If a call is coming in, stop the audio track, turn the ringer on, and terminate the service
+    /**
+     * Called when detecting an incoming call. This will terminate the audio or vibration
+     * playback which then stops the service allowing the call to come through.
+     */
     public void incomingCall(){
-
-    	Log.d(Constants.LOG, "stopping service for call");
-
     	if(ringerPreference == AudioManager.RINGER_MODE_NORMAL)
     	{
-    		Log.d(Constants.LOG, "terminating wrong");
-    		terminateAudio();
-    		
+    		terminateAudio();	
     	} else {
     		terminateVibrate();
     	}
-    	//this.stopSelf();
     }
 
+    /**
+     * Loads the message body into the morse code track, schedules a timer to check for the
+     * next message at the end of the vibration, and vibrates the morse code track
+     */
 	public void vibrateMorseCode(){
-		morseCodeTrack.loadAudioTrack(body);
-		track = morseCodeTrack.getVibrateTrack();
-		long timeDelay = morseCodeTrack.getVibrateDuration();
-		//vibrateHandler.sleep(timeDelay);
-		//Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-		myTimer.schedule(new TimerTask(){
-			@Override
-			public void run(){
-				Log.d(Constants.LOG, "Timer run");
-			if(messages.size() == 0){
-				terminateVibrate();
-				//MyService.this.stopSelf();
-			}
-			else
-				getNextMessage();}
-		}, timeDelay);
-		v.vibrate(track, -1);
-		//SystemClock.sleep(timeDelay);
-		//am.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
-		/*if(messages.size() == 0){
-			terminateVibrate();
-			//am.setRingerMode(ringerPreference);
-			//tm.listen(phoneListener, PhoneStateListener.LISTEN_NONE);
-			this.stopSelf();
-		}
-		else
-			getNextMessage();*/	
 		
+		// Load the body into the morse code track
+		morseCodeTrack.loadAudioTrack(body);
+		
+		// Get the duration of the vibration
+		long timeDelay = morseCodeTrack.getVibrateDuration();
+		
+		// Schedule the timer to check for the next message when the vibration is complete
+		myTimer.schedule(new TimerTask(){
+			
+			@Override
+			public void run(){	
+				
+				// If there are no more messages, terminate the service
+				if(messages.size() == 0){
+					terminateVibrate();
+					
+				// Else get the next message to be vibrated
+				} else {
+					getNextMessage();
+				}
+			}
+		}, timeDelay);
+		
+		// Vibrate the morse code track
+		vibrator.vibrate(morseCodeTrack.getVibrateTrack(), -1);
 	}
+	
+	/**
+	 * terminates textToSpeech, abandons audio focus for the music stream, terminates the 
+	 * morse code audio track, unregisters the telephonyManager listener, sets the ringer
+	 * back to the ringerPreference, unregisters the volume observer, and stops the service
+	 */
 	public void terminateAudio(){
-		Log.d(Constants.LOG, "terminating wrong");
-		if (ttobj != null) {
-            ttobj.stop();
-            ttobj.shutdown();
+		
+		// Set ringer back to the ringer preference
+		audioManager.setRingerMode(ringerPreference);
+		
+		// Unregister the phone state listener
+		telephonyManager.listen(phoneListener, PhoneStateListener.LISTEN_NONE);
+		
+		// Terminate and shutdown textToSpeech
+		if (textToSpeech != null) {
+            textToSpeech.stop();
+            textToSpeech.shutdown();
         }
-		am.abandonAudioFocus(this);
+		
+		// Abandon audio focus of the music stream
+		audioManager.abandonAudioFocus(this);
+		
+		// Terminate the morse code track
 		morseCodeTrack.terminateAudioTrack();
-		tm.listen(phoneListener, PhoneStateListener.LISTEN_NONE);
-		am.setRingerMode(ringerPreference);
+		
+		// Unregister the volume change observer
 		getApplicationContext().getContentResolver().unregisterContentObserver(mSettingsContentObserver);
+		
+		// Stop the service
 		this.stopSelf();
 	}
+	
+	/**
+	 * Releases the morse code track, stops the vibrator, sets the ringer mode back to the ringer
+	 * preference, unregisters the phone state listener, and stops the service.
+	 */
 	public void terminateVibrate(){
-		morseCodeTrack.getTrack().release();
-		v.cancel();
-		am.setRingerMode(ringerPreference);
-		tm.listen(phoneListener, PhoneStateListener.LISTEN_NONE);
+		
+		// Set ringer mode back to ringer preference
+		audioManager.setRingerMode(ringerPreference);
+		
+		// Unregister the phone state listener
+		telephonyManager.listen(phoneListener, PhoneStateListener.LISTEN_NONE);
+		
+		// Release the morse code track
+		morseCodeTrack.releaseTrack();
+		
+		// Cancel the existing vibration
+		vibrator.cancel();
+	
+		// Stop the service
 		this.stopSelf();
 	}
 
-	// Nested class to listen to volume changes
+	/**
+	 * Called when the service is destroyed
+	 */
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+	}
+	
+	/**
+	 * Nested class used to detect volume changes and stop the service when
+	 * the volume down key is pressed.
+	 * @author Jacob Davidson
+	 * @version 1.0.0
+	 */
 	public class SettingsContentObserver extends ContentObserver {
-	    int previousVolume;
-	    Context context;
+	    private int previousVolume;
+	    private Context context;
 	    
-	    public SettingsContentObserver(Context c, Handler handler) {
+	    /**
+	     * Sets the previousVolume and context fields
+	     * @param context
+	     * @param handler
+	     */
+	    public SettingsContentObserver(Context context, Handler handler) {
 	        super(handler);
-	        context=c;
+	        this.context = context;
 	        AudioManager audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         	previousVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
 	    }
@@ -486,20 +520,30 @@ public class MyService extends Service implements OnInitListener, OnUtteranceCom
 	    public boolean deliverSelfNotifications() {
 	        return super.deliverSelfNotifications();
 	    }
-
+	    
+	    /**
+	     * Detects a change in the volume setting of the music stream. If the volume is decrease, indicates
+	     * the user wants to stop the service before completion so the terminateAudio method is called.
+	     */
 	    @Override
 	    public void onChange(boolean selfChange) {
 	        super.onChange(selfChange);
-	        Log.d(Constants.LOG, "Volume Key Pressed");
+	        
+	        // Get the current volume after the change
 	        AudioManager audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 	        int currentVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
-	        int delta=previousVolume-currentVolume;
-
 	        
-	        if(delta>0)
+	        // Compare the current volume to the previous volume.
+	        int delta = previousVolume - currentVolume;
+	        
+	        // If delta is greater than 0, the volume down key was pressed, terminate the audio and stop the service
+	        if(delta > 0)
 	        {
-	            Log.d(Constants.LOG, "Volume Down Pressed!");
 	            terminateAudio();
+	        
+	        // Else set the previous volume to the current volume to detect a volume decrease on the next push
+	        } else {
+	        	previousVolume = currentVolume;
 	        }
 	    }
 	}
