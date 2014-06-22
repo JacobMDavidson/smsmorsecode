@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">SMSMorseCode</string>
+    <string name="action_settings">Settings</string>
+    <string name="enable">Listen to SMS in Morse Code</string>
+    <string name="settings">Settings:</string>
+    <string name="frequencyLabel">Frequency:</string>
+    <string name="frequency">700 Hz</string>
+    <string name="speedLabel">Speed:</string>
+    <string name="speed">20 Words Per Minute</string>
+    <string name="speak">SOS</string>
+    <string name="button">Test Settings</string>
+    <string name="buttonDefault">Default</string>
+    <string name="testMessage">Test:</string>
+
+</resources>
