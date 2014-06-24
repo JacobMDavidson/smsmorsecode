@@ -18,7 +18,6 @@ import android.media.AudioTrack;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Vibrator;
 import android.provider.ContactsContract.PhoneLookup;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
@@ -59,15 +58,16 @@ public class MyService extends Service implements OnInitListener,
 	private SharedPreferences sharedPrefs;
 	
 	// Stores the body converted to a morse code track for play back or vibration
-	private MorseCodeTrack morseCodeTrack;
+	private MorseCodeAudioTrack morseCodeAudioTrack;
+	
+	// Stores the body converted to a morse code vibration track
+	private MorseCodeVibrateTrack morseCodeVibrateTrack;
 	
 	// Stores the AudioManager object from which the ringer settings are determined
 	private AudioManager audioManager;
 	
 	// Used to vibrate the morse code track when ringerPreference is vibrate
-	private Vibrator vibrator;
-	 
-	//private long[] track;
+	// private Vibrator vibrator;
 	
 	// Timer used to play back each vibration in the queue
 	private Timer myTimer;
@@ -118,8 +118,7 @@ public class MyService extends Service implements OnInitListener,
 		int frequencySetting = sharedPrefs.getInt("FrequencySetting", Constants.DEFAULT_FREQUENCY);
 		int speedSetting = sharedPrefs.getInt("SpeedSetting", Constants.DEFAULT_SPEED);
 		double freqHz = MainActivity.getFrequency(frequencySetting);
-		int wordsPerMinute = MainActivity.getWordsPerMinute(speedSetting);		  
-    	morseCodeTrack = new MorseCodeTrack("", freqHz, wordsPerMinute);		
+		int wordsPerMinute = MainActivity.getWordsPerMinute(speedSetting);		  		
 
     	// If the ringerPreference is set to silent, stop the service
     	if(ringerPreference == AudioManager.RINGER_MODE_SILENT){
@@ -146,6 +145,9 @@ public class MyService extends Service implements OnInitListener,
                     // Request permanent focus.
                     AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
     		
+    		// Instantiate the morseCodeAudioTrack
+    		morseCodeAudioTrack = new MorseCodeAudioTrack("", freqHz, wordsPerMinute);
+    		
     		// Instantiate the textToSpeech object used to speak the name or number of the sender
     		textToSpeech = new TextToSpeech(this, this);
     	} 
@@ -158,8 +160,8 @@ public class MyService extends Service implements OnInitListener,
     		 */
     		myTimer = new Timer();
     		
-    		// Instantiate the vibrator
-    		vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+    		// Instantiate the morseCodeVibrateTrack
+    		morseCodeVibrateTrack = new MorseCodeVibrateTrack(this, "", wordsPerMinute);
     	}
     	
     	// Set the ringer mode to silent to silence incoming text message notifications
@@ -291,16 +293,16 @@ public class MyService extends Service implements OnInitListener,
 	public void onUtteranceCompleted(String arg0) {
 		
 		// Load the morseCodeTrack with the body of the message
-		morseCodeTrack.loadAudioTrack(body);
+		morseCodeAudioTrack.loadAudioTrack(body);
 		
 		// Set a playback position listener for the track
-		morseCodeTrack.getTrack().setPlaybackPositionUpdateListener(this);
+		morseCodeAudioTrack.getTrack().setPlaybackPositionUpdateListener(this);
 		
 		// Set a notification marker for the end of the track
-		morseCodeTrack.getTrack().setNotificationMarkerPosition(morseCodeTrack.getTotalFrameCount());
+		morseCodeAudioTrack.getTrack().setNotificationMarkerPosition(morseCodeAudioTrack.getTotalFrameCount());
 		
 		// Play the morse code audio track
-    	morseCodeTrack.playAudioTrack();
+    	morseCodeAudioTrack.playAudioTrack();
 	}
 	
 	/**
@@ -315,8 +317,8 @@ public class MyService extends Service implements OnInitListener,
 		// Perform the query of using the phoneNumber 
 		Uri lookupUri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, 
 				Uri.encode(phoneNumber));
-		Cursor cursor = getApplicationContext().getContentResolver().query(lookupUri, 
-				new String[] { PhoneLookup.DISPLAY_NAME }, null, null, null);
+		Cursor cursor = this.getContentResolver().query(lookupUri, 
+						new String[] { PhoneLookup.DISPLAY_NAME }, null, null, null);
 		
 		String displayName;
 		
@@ -406,10 +408,10 @@ public class MyService extends Service implements OnInitListener,
 	public void vibrateMorseCode(){
 		
 		// Load the body into the morse code track
-		morseCodeTrack.loadAudioTrack(body);
+		morseCodeVibrateTrack.loadVibrateTrack(body);
 		
 		// Get the duration of the vibration
-		long timeDelay = morseCodeTrack.getVibrateDuration();
+		long timeDelay = morseCodeVibrateTrack.getVibrateDuration();
 		
 		// Schedule the timer to check for the next message when the vibration is complete
 		myTimer.schedule(new TimerTask(){
@@ -428,8 +430,8 @@ public class MyService extends Service implements OnInitListener,
 			}
 		}, timeDelay);
 		
-		// Vibrate the morse code track
-		vibrator.vibrate(morseCodeTrack.getVibrateTrack(), -1);
+		// Vibrate the track
+		morseCodeVibrateTrack.playVibrateTrack();
 	}
 	
 	/**
@@ -455,10 +457,10 @@ public class MyService extends Service implements OnInitListener,
 		audioManager.abandonAudioFocus(this);
 		
 		// Terminate the morse code track
-		morseCodeTrack.terminateAudioTrack();
+		morseCodeAudioTrack.terminateAudioTrack();
 		
 		// Unregister the volume change observer
-		getApplicationContext().getContentResolver().unregisterContentObserver(mSettingsContentObserver);
+		this.getContentResolver().unregisterContentObserver(mSettingsContentObserver);		
 		
 		// Stop the service
 		this.stopSelf();
@@ -476,12 +478,9 @@ public class MyService extends Service implements OnInitListener,
 		// Unregister the phone state listener
 		telephonyManager.listen(phoneListener, PhoneStateListener.LISTEN_NONE);
 		
-		// Release the morse code track
-		morseCodeTrack.releaseTrack();
-		
 		// Cancel the existing vibration
-		vibrator.cancel();
-	
+		morseCodeVibrateTrack.cancelVibrateTrack();
+		
 		// Stop the service
 		this.stopSelf();
 	}
