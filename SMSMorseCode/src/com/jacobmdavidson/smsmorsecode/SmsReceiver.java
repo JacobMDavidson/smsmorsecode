@@ -18,7 +18,6 @@ public class SmsReceiver extends BroadcastReceiver {
     	//AudioManager am = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
 		//if(am.getRingerMode() == AudioManager.RINGER_MODE_NORMAL) {	
     	TelephonyManager  tm = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
-    	AudioManager am = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
     	
     	//If there is not a call in progress, start the service
     	if(tm.getCallState() == TelephonyManager.CALL_STATE_IDLE){
