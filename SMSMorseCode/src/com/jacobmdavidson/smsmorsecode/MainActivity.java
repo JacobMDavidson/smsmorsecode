@@ -15,7 +15,6 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 public class MainActivity extends Activity implements OnSeekBarChangeListener{
-	
 	private SeekBar frequencyBar, speedBar;
 	private TextView frequencySetting, speedSetting;
 	private ToggleButton toggle;
