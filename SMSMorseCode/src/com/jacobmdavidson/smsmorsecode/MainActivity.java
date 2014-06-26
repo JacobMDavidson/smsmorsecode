@@ -110,7 +110,7 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
 		 * Include a flag that states this comes from a test message
 		 * */
 		Context context = getApplicationContext();
-		Intent service = new Intent(context, MyService.class);
+		Intent service = new Intent(context, SmsMorseCodeService.class);
 		String text = textToTranslate.getText().toString();
     	service.putExtra("sender", "Here is your translated Message");
     	service.putExtra("body", text);

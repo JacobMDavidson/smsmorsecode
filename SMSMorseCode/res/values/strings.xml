@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">SMSMorseCode</string>
+    <string name="app_name">SMorSe</string>
     <string name="action_settings">Settings</string>
     <string name="enable">Listen to SMS in Morse Code</string>
     <string name="settings">Settings:</string>

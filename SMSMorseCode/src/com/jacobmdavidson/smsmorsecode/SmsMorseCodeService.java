@@ -38,7 +38,7 @@ import android.telephony.TelephonyManager;
  */
 
 @SuppressWarnings("deprecation")
-public class MyService extends Service implements OnInitListener, 
+public class SmsMorseCodeService extends Service implements OnInitListener, 
 		OnUtteranceCompletedListener, AudioTrack.OnPlaybackPositionUpdateListener, 
 		OnAudioFocusChangeListener {
 

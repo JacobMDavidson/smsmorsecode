@@ -21,7 +21,7 @@ public class SmsReceiver extends BroadcastReceiver {
     	
     	//If there is not a call in progress, start the service
     	if(tm.getCallState() == TelephonyManager.CALL_STATE_IDLE){
-	    	service = new Intent(context, MyService.class);
+	    	service = new Intent(context, SmsMorseCodeService.class);
 	        Bundle extras = intent.getExtras();
 	        
 	        // If there is no text message, return without starting the service
