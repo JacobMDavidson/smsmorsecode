@@ -121,7 +121,8 @@ public class MorseCodeVibrateTrack{
 				}
 			}
 			
-			// Initialize the pattern array with the calculated length
+			
+			//  Initialize the pattern array with the calculated length
 			long[] pattern = new long[arrayLength];
            
            /*
@@ -149,8 +150,7 @@ public class MorseCodeVibrateTrack{
            
            /*
             * Change the first number of pattern to 0 to indicate that the vibration 
-            * should start immediately. Note, MorseCodeConverter adds zeros to the 
-            * beginning of the translated string so this will not affect the conversion.
+            * should start immediately. All strings coming from MorseCodeCoverter start with 0.
             */
            pattern[0] = 0;
            vibrateConversion = pattern;

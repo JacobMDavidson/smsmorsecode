@@ -32,9 +32,8 @@ public class SmsReceiver extends BroadcastReceiver {
 	        	SmsMessage SMessage = SmsMessage.createFromPdu((byte[]) pdus[i]);
 	        	String sender = SMessage.getOriginatingAddress();
 	        	String body = SMessage.getMessageBody().toString();
-	        	service.putExtra("sender", sender);
+	        	//service.putExtra("sender", sender);
 	        	service.putExtra("body", body);
-	        	service.putExtra("caller", "SmsReceiver");
 	        	context.startService(service);
 	        }
 		}
