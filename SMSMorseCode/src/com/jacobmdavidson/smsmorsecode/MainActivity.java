@@ -14,23 +14,47 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+/**
+ * Enable/Disable the sms morse code receiver, and adjust settings for sms morse code playback, including 
+ * frequency and duration. Provides ability to test settings with a user provided string.
+ * @author Jacob Davidson
+ * @version 1.0.0
+ */
 public class MainActivity extends Activity implements OnSeekBarChangeListener{
+	
+	// The frequency and speed setting seek bars
 	private SeekBar frequencyBar, speedBar;
+	
+	// The frequency and speed setting seek bar labels
 	private TextView frequencySetting, speedSetting;
+	
+	// The enable/disable toggle button
 	private ToggleButton toggle;
+	
+	// The shared preferences where the settings are stored
 	private SharedPreferences sharedPrefs;
+	
+	// The text box with the editable string that will be tested with the morse code settings
 	private EditText textToTranslate;
+	
+	// Editor to edit shared preference settings
 	private SharedPreferences.Editor editor;
+	
+	// Package Manager used to register/deregister the SmsMorseCodeReceiver
 	private PackageManager pm;
+	
+	// Component that is registered/deregistered 
 	private ComponentName componentName;
+	
+	// speed in words per minute
 	private int wordsPerMinute;
+	
+	// Frequency in Hz
 	private double frequency;
-	//@ TODO
-	/** To clean up this class
-	 *  Create a setFrequency method that sets frequency progress, text, and updates preferences in one spot
-	 *  Create a setSpeed method that sets frequency progress, text, and updates preferences in one spot
-	 *  Remove all of the "Magic numbers"
-	 *  Once above is done, and MorseCode class is good, update MyService to match
+
+	/**
+	 * Called when the activity is created. Retrieve all saved settings, and set all toggle buttons, 
+	 * seek bars, and labels according to the retrieved settings.
 	 */
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -41,26 +65,26 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
 		sharedPrefs = getSharedPreferences("com.jacobmdavidson.smsmorsecode", MODE_PRIVATE);
 		editor = getSharedPreferences("com.jacobmdavidson.smsmorsecode", MODE_PRIVATE).edit();
 
-		// Instantiate and Set the toggle button accordingly
+		// Instantiate and Set the toggle button according to the preferences
 		toggle = (ToggleButton) findViewById(R.id.toggleButton1);
 		toggle.setChecked(sharedPrefs.getBoolean("ToggleButtonState", false));
 		
-		//Instantiate the SeekBars and set them accordingly
+		//Instantiate the frequency SeekBar, set it according to the preferences, and register the listener
 		frequencyBar = (SeekBar)findViewById(R.id.seekBar1);
 		frequencyBar.setProgress(sharedPrefs.getInt("FrequencySetting", Constants.DEFAULT_FREQUENCY));
 		frequencyBar.setOnSeekBarChangeListener(this);
 		
+		//Instantiate the speed SeekBar, set it according to the preferences, and register the listener
 		speedBar = (SeekBar)findViewById(R.id.seekBar2);
 		speedBar.setProgress(sharedPrefs.getInt("SpeedSetting", Constants.DEFAULT_SPEED));
 		speedBar.setOnSeekBarChangeListener(this);
 		
-		//Instantiate the TextViews and set them accordingly
+		//Instantiate the frequency TextView and set it accordingly
 		frequencySetting = (TextView)findViewById(R.id.textView4);
-
-
 		frequency = getFrequency(sharedPrefs.getInt("FrequencySetting", Constants.DEFAULT_FREQUENCY));
 		frequencySetting.setText((int)frequency + " Hz");
 
+		//Instantiate the speed TextView and set it accordingly
 		speedSetting = (TextView)findViewById(R.id.textView6);
 		wordsPerMinute = getWordsPerMinute(sharedPrefs.getInt("SpeedSetting", Constants.DEFAULT_SPEED));
 		speedSetting.setText(wordsPerMinute + " Words Per Minute");
@@ -68,14 +92,27 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
 		//Instantiate the EditText object
 		textToTranslate = (EditText)findViewById(R.id.editTextToTranslate);
 		
+		// Get the package manager
+		pm = this.getPackageManager();
+		
+		// Instantiate the component name 
+        componentName = new ComponentName(this, SmsMorseCodeReceiver.class);
+		
 	}
 
+	/**
+	 * Stores the updated setting, and enables/disables the SmsMorseCodeReceiver according to 
+	 * the toggle button's new state.
+	 * @param view The view from which the click is received
+	 */
 	public void onToggleClicked(View view){
-		boolean on = ((ToggleButton) view).isChecked();
-		pm = this.getPackageManager();
-        componentName = new ComponentName(this, SmsReceiver.class);
+		
+		// Get the state of the toggle button
+		boolean enabled = ((ToggleButton) view).isChecked();
 
-        if (on) {
+
+        // If the state of the toggle is now enabled, enable the SmsMorseCodeReceiver
+        if (enabled) {
 	    	// Save state of toggle button
 	        editor.putBoolean("ToggleButtonState", true);
 	        editor.commit();
@@ -85,13 +122,13 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
             pm.setComponentEnabledSetting(componentName,
             		PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
             		PackageManager.DONT_KILL_APP);
-	        
+	    
+        // Else the state of the toggle is now disabled, disable the SmsMorseCodeReceiver
 	    } else {
 	    	
 	    	// Save state of toggle button
 	        editor.putBoolean("ToggleButtonState", false);
 	        editor.commit();  
-
 	        
 	        // Disable the BroadcastReceiver
             pm.setComponentEnabledSetting(componentName,
@@ -99,64 +136,38 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
             		PackageManager.DONT_KILL_APP);
 	       
 	    }
-	    // Display debugging message in logcat
-	    // Log.d(Constants.LOG,text);
 	}
 	
-	
+	/**
+	 * When the test settings button is clicked, create an intent and add the string
+	 * that will be used for testing to that intent. Finally, start the SmsMorseCodeService	
+	 * @param view The view from which the click is received
+	 */
 	public void onButtonClicked(View view){
-		/**Instead of all this code, send an intent to the service
-		 * Include a flag that states this comes from a test message
-		 * */
-		Context context = getApplicationContext();
-		Intent service = new Intent(context, SmsMorseCodeService.class);
+		
+		// Create the intent 
+		Intent service = new Intent(this, SmsMorseCodeService.class);
+		
+		// Get the text to translate string, and add it to the intent
 		String text = textToTranslate.getText().toString();
     	service.putExtra("body", text);
-    	context.startService(service);
-    	/*
-		long[] track;
-		//double freqHz;
-		//int wordsPerMinute;
-		//Get the frequency and set freqHz accordingly
-		
-		//freqHz = getFrequency(sharedPrefs);
-		
-		
-		// Determine duration per unit based on 'PARIS' method (50 units makes up the word paris
-		// msec/unit = (1 min / number of words) * (1 word / 50 units) * (60000 msec / min)
-		// @ TODO change duration to 10,20,30,40 or 50
-		//wordsPerMinute = (duration + 1) * 10;
-		//wordsPerMinute = getWordsPerMinute(sharedPrefs);
-       
-    	// Build the AudioTrack and play it
-    	MorseCodeTrack morseCodeTrack = new MorseCodeTrack(text, frequency, wordsPerMinute);
     	
-    	AudioManager am = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-    	if(am.getRingerMode() == AudioManager.RINGER_MODE_NORMAL){
-    		morseCodeTrack.playAudioTrack();
-    		morseCodeTrack.terminateAudioTrack();
-    	}
-    	else if(am.getRingerMode() == AudioManager.RINGER_MODE_VIBRATE){
-    		track = morseCodeTrack.getVibrateTrack();
-    		Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-    		
-    		//for(int i= 0; i < track.length; i++)
-    		//	Log.d(Constants.LOG, track[i] + "");
-    		v.vibrate(track, -1);
-    	}
-    	*/
-
+    	// Start the SmsMorseCodeService
+    	this.startService(service);
+  
 	}
 	
-	//Seekbar methods
+	/**
+	 * change the seek bar labels during the onProgressChanged event
+	 */
 	@Override
-	public void onProgressChanged(SeekBar seekBar, 
-			int progress,
-			boolean fromUser) {
+	public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 		
-		// Set the text for the appropriate seek bar
+		// If the seekBar is the frequency bar, update the frequency label as the setting changes
 		if (seekBar.equals(frequencyBar)){
 			frequencySetting.setText((int)getFrequency(progress) + " Hz");
+			
+		// Else If the seekBar is the speed bar, update the speed label as the setting changes
 		} else if(seekBar.equals(speedBar)){
 			speedSetting.setText(getWordsPerMinute(progress) + " Words Per Minute");
 			
@@ -167,17 +178,25 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
 	@Override
 	public void onStartTrackingTouch(SeekBar seekBar) {
 		// Method is purposely empty
-		
 	}
 
+	/**
+	 * On the stop tracking touch event, update the shared preference settings
+	 * with the selected setting.
+	 */
 	@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
+		
+		// Get the progress of the seek bar whose setting changed
 		int progress = seekBar.getProgress();
+		
+		// If this is the frequency bar, save the frequency setting, and set the frequency field
 		if (seekBar.equals(frequencyBar)){
-			// Save frequency setting
 	        editor.putInt("FrequencySetting", progress);
 	        editor.commit();
 	        frequency = getFrequency(progress);
+	        
+	    // Else if this is the speed bar, save the speed setting, and set the wordsPerMinute field
 		} else if(seekBar.equals(speedBar)){
 			// Save speed setting
 	        editor.putInt("SpeedSetting", progress);
@@ -187,122 +206,47 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
 		
 	}
 	
+	/**
+	 * Changes the speed and frequency settings to the defaults of 30 words per minute
+	 * and 700 Hz respectively.
+	 * @param view The view from which the click is received
+	 */
 	public void onDefaultButtonClicked(View view){
-		//SharedPreferences.Editor editor = getSharedPreferences("com.jacobmdavidson.smsmorsecode", MODE_PRIVATE).edit();
-        editor.putInt("FrequencySetting", Constants.DEFAULT_FREQUENCY);
+		
+		// Save the default settings to frequency and speed 
+		editor.putInt("FrequencySetting", Constants.DEFAULT_FREQUENCY);
         editor.putInt("SpeedSetting", Constants.DEFAULT_SPEED);
         editor.commit();
+        
+        // Change the seek bars to the default setting locations
         frequencyBar.setProgress(Constants.DEFAULT_FREQUENCY);
         speedBar.setProgress(Constants.DEFAULT_SPEED);
+        
+        // Update the frequency and wordsPerMinute fields with the default settings
         frequency = getFrequency(Constants.DEFAULT_FREQUENCY);
         wordsPerMinute = getWordsPerMinute(Constants.DEFAULT_SPEED);
+        
+        // Update the labels for each of the seek bars with the default settings
         frequencySetting.setText((int)frequency + " Hz");
         speedSetting.setText(wordsPerMinute + " Words Per Minute");
 	}
+	
+	/**
+	 * Convert the speed bar progress setting to words per minute.
+	 * @param duration Progress setting of the speed bar.
+	 * @return Speed of morse code play back in words per minute.
+	 */
     public static int getWordsPerMinute(int duration){
-    	/*int duration = sharedPrefs.getInt("SpeedSetting", Constants.DEFAULT_SPEED);
-    	if(duration < 4){
-    		return (duration + 1) * 10;
-    	} else {
-    		return (duration + 2) * 10;
-    	}*/
     	return (duration + 1) * 10;
     }
+    
+    /**
+     * Convert the frequency bar progress setting to frequency. 
+     * @param frequency Progress setting of the frequency bar
+     * @return Frequency of morse code play back in Hz
+     */
     public static double getFrequency(int frequency){
     	return (frequency + 8.0) * 50.0;
     }
 }
-/*	
-	private void playSound(String pattern, int freqHz, int durationMs) {
-		Log.d(Constants.LOG, "playing sound");
-	    // AudioTrack definition
-	    int mBufferSize = AudioTrack.getMinBufferSize(44100,
-	                        AudioFormat.CHANNEL_OUT_MONO,    
-	                        AudioFormat.ENCODING_PCM_16BIT);
 
-	    AudioTrack mAudioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 44100,
-	                        AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT,
-	                        mBufferSize, AudioTrack.MODE_STREAM);
-	    
-	    //Need to get actual length, and vary the amplitude based on pattern
-	    int count = (int)(((double)Constants.SAMPLE_RATE) * 2.0 * (durationMs / 1000.0)) & ~1;
-    	int numCharacters = pattern.length();
-    	
-    	// Total length should be number of frames 
-    	int totalLength = count * numCharacters;
-    	
-	     // Sine wave
-	     double[] mSound = new double[totalLength];
-	     short[] mBuffer = new short[totalLength];
-	     int multiplier;
-	     for(int j=0; j<numCharacters; j++){
-	    	 multiplier = Character.getNumericValue(pattern.charAt(j));
-	     // Create sound wave
-		     for (int i = (j * (mSound.length / numCharacters)); i < (j + 1) * (mSound.length / numCharacters); i++) {
-		         mSound[i] = Math.sin((2.0*Math.PI * freqHz/((double)Constants.SAMPLE_RATE)*(double)i)) * multiplier;
-		         mBuffer[i] = (short) (mSound[i]*Short.MAX_VALUE);
-		     }
-	     }
-	     
-	     
-	     //for (int i = 0; i < mSound.length; i++) {
-	       //  mSound[i] = Math.sin((2.0*Math.PI * 800/44100.0*(double)i));
-	         //mBuffer[i] = (short) (mSound[i]*Short.MAX_VALUE);
-	     //}
-	     
-		
-	     mAudioTrack.setStereoVolume(1.0f, 1.0f);
-	     mAudioTrack.play();
-
-	     mAudioTrack.write(mBuffer, 0, mSound.length);
-	     mAudioTrack.stop();
-	     mAudioTrack.release();
-	     
-
-	}
-	
-
-}*/
-/*
- * 	private AudioTrack generateMorseCode(String morseCode)
-    {
-    	final double freqHz = (double)((sharedPrefs.getInt("FrequencySetting", 14) + 2) * 50);
-    	int durationMs; // Base duration  
-    	
-    	//Calculate duration
-    	durationMs = 50 * 1000 / (60 * (sharedPrefs.getInt("SpeedSetting", 10) + 5));
-    	
-    	int count = (int)(44100.0 * 2.0 * (durationMs / 1000.0)) & ~1;
-    	int numCharacters = morseCode.length();
-    	
-    	// Total length should be number of frames 
-    	int totalLength = count * numCharacters;
-    	
-    	Log.d("com.jacobmdavidson.smsmorsecode", "count:" + count + " numCharacters:" + numCharacters + " total Length: " + totalLength);
-    	
-    	short[] samples = new short[totalLength];
-    	int bufferSizeInBytes = totalLength * (Short.SIZE / 8);
-    	int location; 
-    	int multiplier;
-    	
-    	for(int i = 0; i < totalLength; i += 2){
-    		location = (i / count);
-    		multiplier = Character.getNumericValue(morseCode.charAt(location));
-    		short sample = (short)(Math.sin(2 * Math.PI * i / (44100.0 / freqHz)) * 0x7FFF * multiplier);
-    		samples[i + 0] = sample;
-    		samples[i + 1] = sample;
-    	}
-    	
-    	// totalLength * (Short.SIZE / 8) is the number of bytes for the sample
-    	AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, 44100,
-    		AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
-    		bufferSizeInBytes, AudioTrack.MODE_STATIC);
-    	track.write(samples, 0, totalLength);
-    	// set setNotificationMarkerPosition according to audio length
-    	track.setPlaybackPositionUpdateListener(this);
-    	
-    	// Not sure why I have to divide by 4.05 (should be / 4 for total frames)
- 	    track.setNotificationMarkerPosition((int)(bufferSizeInBytes / 4.05));
- 	    
-    	return track;
-    }*/
