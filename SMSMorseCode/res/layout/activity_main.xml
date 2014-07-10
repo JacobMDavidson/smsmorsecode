@@ -66,6 +66,7 @@
 			android:orientation="horizontal"
 			android:layout_marginLeft="10dip"
 			android:layout_marginRight="10dip" >
+
 		   	<TextView
 		   	    android:id="@+id/textView3"
 		   	    android:layout_width="0dip"
@@ -73,8 +74,8 @@
 		   	    android:layout_marginTop="5dp"
 		   	    android:layout_weight="0.3"
 		   	    android:text="@string/frequencyLabel"
-		   	    android:textSize="18sp" 
-		   	/>
+		   	    android:textSize="16sp" />
+
 		   	<LinearLayout     
 		   	    android:layout_width="0dip"
 		   	    android:layout_weight="0.7"
@@ -87,14 +88,15 @@
 			        android:max="12" 
 			        android:progress="6"
 				/>
+
 				<TextView
 				    android:id="@+id/textView4"
 				    android:layout_width="wrap_content"
 				    android:layout_height="wrap_content"
 				    android:layout_gravity="center_horizontal"
 				    android:text="@string/frequency"
-				    android:textSize="18sp" 
-				/>
+				    android:textSize="16sp" />
+
 			</LinearLayout>
 		</LinearLayout>
 		<LinearLayout
@@ -104,15 +106,16 @@
 			android:orientation="horizontal"
 			android:layout_marginLeft="10dip"
 			android:layout_marginRight="10dip" >  
+
 			<TextView
-				android:id="@+id/textView5"
-	    		android:layout_width="0dip"
+			    android:id="@+id/textView5"
+			    android:layout_width="0dip"
 			    android:layout_height="wrap_content"
 			    android:layout_marginTop="0dip"
 			    android:layout_weight="0.3"
 			    android:text="@string/speedLabel"
-			    android:textSize="18sp" 
-			/>
+			    android:textSize="16sp" />
+
 	   	   	<LinearLayout     
 		   	    android:layout_width="0dip"
 		   	    android:layout_weight="0.7"
@@ -125,14 +128,15 @@
 			        android:max="3" 
 			        android:progress="2"
 				/>
+
 				<TextView
 				    android:id="@+id/textView6"
 				    android:layout_width="wrap_content"
 				    android:layout_height="wrap_content"
 				    android:layout_gravity="center_horizontal"
 				    android:text="@string/speed"
-				    android:textSize="18sp" 
-				/>
+				    android:textSize="16sp" />
+
 			</LinearLayout>
 		</LinearLayout>
 		<LinearLayout
@@ -144,25 +148,25 @@
 			android:orientation="horizontal"
 			android:focusable="true"
 			android:focusableInTouchMode="true" >  
+
 			<TextView
 			    android:id="@+id/textView7"
 			    android:layout_width="0dip"
-			    android:layout_weight="0.3"
 			    android:layout_height="wrap_content"
+			    android:layout_weight="0.3"
 			    android:text="@string/testMessage"
-		
-			    android:textSize="18sp" 
-			/>
+			    android:textSize="16sp" />
+
 			<EditText
 			    android:id="@+id/editTextToTranslate"
 			    android:layout_width="0dip"
-			    android:layout_weight="0.7"
 			    android:layout_height="wrap_content"
+			    android:layout_weight="0.7"
 			    android:ems="10"
 			    android:inputType="text"
 			    android:text="@string/speak"
-			    android:textSize="20sp" 
-			/>
+			    android:textSize="16sp" />
+
 		</LinearLayout>
 		<LinearLayout
 		    android:layout_width="fill_parent"

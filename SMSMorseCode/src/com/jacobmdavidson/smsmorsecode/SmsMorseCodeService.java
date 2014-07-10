@@ -4,6 +4,9 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
+import com.google.analytics.tracking.android.EasyTracker;
+import com.google.analytics.tracking.android.MapBuilder;
+
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -66,6 +69,9 @@ public class SmsMorseCodeService extends Service implements AudioTrack.OnPlaybac
 	private PhoneStateListener phoneListener;
 	private TelephonyManager telephonyManager;
 	
+	// Google analytics tracker
+	EasyTracker easyTracker = null;
+	
 	/**
 	 * This service is not bound to an activity. Everything happens in the background
 	 */
@@ -87,6 +93,8 @@ public class SmsMorseCodeService extends Service implements AudioTrack.OnPlaybac
 	 */
 	@Override
 	public void onCreate() {	
+		// Instantiate the EasyTracker object
+		easyTracker = EasyTracker.getInstance(this);
 		
 		// Create a broadcast receiver that detects when the screen is turned off
 		final IntentFilter theFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
@@ -247,6 +255,14 @@ public class SmsMorseCodeService extends Service implements AudioTrack.OnPlaybac
 	 * called when the morse code track is done playing.
 	 */
 	public void playMorseCode() {
+		// Send the event to google analytics
+		easyTracker.send(MapBuilder
+			      .createEvent("service_action",     // Event category (required)
+			                   "play_message",  // Event action (required)
+			                   "message_audible",   // Event label
+			                   null)            // Event value
+			      .build()
+			  );
 		
 		// Load the morseCodeTrack with the body of the message
 		morseCodeAudioTrack.loadAudioTrack(body);
@@ -333,7 +349,15 @@ public class SmsMorseCodeService extends Service implements AudioTrack.OnPlaybac
      * next message at the end of the vibration, and vibrates the morse code track
      */
 	public void vibrateMorseCode(){
-		
+		// Send the event to google analytics
+		easyTracker.send(MapBuilder
+			      .createEvent("service_action",     // Event category (required)
+			                   "play_message",  // Event action (required)
+			                   "message_vibrate",   // Event label
+			                   null)            // Event value
+			      .build()
+			  );		
+				
 		// Load the body into the morse code track
 		morseCodeVibrateTrack.loadVibrateTrack(body);
 		
