@@ -6,14 +6,18 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.ToggleButton;
-import com.google.analytics.tracking.android.EasyTracker;
-import com.google.analytics.tracking.android.MapBuilder;
+
+// Google analytics will not be used in this release 
+// import com.google.analytics.tracking.android.EasyTracker;
+// import com.google.analytics.tracking.android.MapBuilder;
 
 /**
  * Enable/Disable the sms morse code receiver, and adjust settings for sms morse code playback, including 
@@ -53,8 +57,8 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
 	// Frequency in Hz
 	private double frequency;
 	
-	// Google analytics tracker
-	EasyTracker easyTracker = null;
+	// Google analytics tracker (not used in this release)
+	// EasyTracker easyTracker = null;
 
 	/**
 	 * Called when the activity is created. Retrieve all saved settings, and set all toggle buttons, 
@@ -65,8 +69,8 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		// Instantiate the EasyTracker object
-		easyTracker = EasyTracker.getInstance(this);
+		// Instantiate the EasyTracker object (not used in this release)
+		// easyTracker = EasyTracker.getInstance(this);
 		
 		// Get saved preferences
 		sharedPrefs = getSharedPreferences("com.jacobmdavidson.smsmorsecode", MODE_PRIVATE);
@@ -106,14 +110,47 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
         componentName = new ComponentName(this, SmsMorseCodeReceiver.class);
 		
 	}
-	
+
+	/**
+	 * Display the menu in the action bar (or menu bar)
+	 */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+    
+    /**
+     * When a menu item is selected, display the appropriate page
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+            	Intent aboutIntent = new Intent(this, ActivityAbout.class);
+            	startActivity(aboutIntent);
+                return true;
+            case R.id.action_chart:
+            	Intent chartIntent = new Intent(this, ActivityChart.class);
+            	startActivity(chartIntent);
+                return true;            	
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+    
 	/**
 	 * Override the onStart method to add the easyTracker send method
 	 */
 	@Override
 	public void onStart(){
 		super.onStart();
-		EasyTracker.getInstance(this).activityStart(this); 
+		
+		// Google Analytics is not used in this release
+		// EasyTracker.getInstance(this).activityStart(this); 
 	}
 
 	/**
@@ -122,14 +159,16 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
 	 * @param view The view from which the click is received
 	 */
 	public void onToggleClicked(View view){
-		// Send the event to google analytics
-		easyTracker.send(MapBuilder
-			      .createEvent("ui_action",     // Event category (required)
-			                   "button_press",  // Event action (required)
-			                   "enabled_button",   // Event label
-			                   null)            // Event value
-			      .build()
-			  );
+		// Send the event to google analytics (not used in this release)
+		/*
+		 * easyTracker.send(MapBuilder
+		 *	      .createEvent("ui_action",     // Event category (required)
+		 *	                   "button_press",  // Event action (required)
+		 *	                   "enabled_button",   // Event label
+		 *	                   null)            // Event value
+		 *	      .build()
+		 *	  );
+		 */
 		
 		// Get the state of the toggle button
 		boolean enabled = ((ToggleButton) view).isChecked();
@@ -167,14 +206,17 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
 	 * @param view The view from which the click is received
 	 */
 	public void onButtonClicked(View view){
-		// Send the event to google analytics
-		easyTracker.send(MapBuilder
-			      .createEvent("ui_action",     // Event category (required)
-			                   "button_press",  // Event action (required)
-			                   "test_settings_button",   // Event label
-			                   null)            // Event value
-			      .build()
-			  );		
+		// Send the event to google analytics (not used in this release)
+		/* 
+		 * easyTracker.send(MapBuilder
+		 *	      .createEvent("ui_action",     // Event category (required)
+		 *	                   "button_press",  // Event action (required)
+		 *	                   "test_settings_button",   // Event label
+		 *	                   null)            // Event value
+		 *	      .build()
+		 *	  );
+		 */		
+		
 		// Create the intent 
 		Intent service = new Intent(this, SmsMorseCodeService.class);
 		
@@ -216,14 +258,17 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
 	 */
 	@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
-		// Send the event to google analytics
-		easyTracker.send(MapBuilder
-			      .createEvent("ui_action",     // Event category (required)
-			                   "button_press",  // Event action (required)
-			                   "settings_seekbar",   // Event label
-			                   null)            // Event value
-			      .build()
-			  );		
+		// Send the event to google analytics (not used in this release)
+		/*
+		 * easyTracker.send(MapBuilder
+		 *	      .createEvent("ui_action",     // Event category (required)
+		 *	                   "button_press",  // Event action (required)
+		 *	                   "settings_seekbar",   // Event label
+		 *	                   null)            // Event value
+		 *	      .build()
+		 *	  );	
+		 */	
+		
 		// Get the progress of the seek bar whose setting changed
 		int progress = seekBar.getProgress();
 		
@@ -249,14 +294,17 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
 	 * @param view The view from which the click is received
 	 */
 	public void onDefaultButtonClicked(View view){
-		// Send the event to google analytics
-		easyTracker.send(MapBuilder
-			      .createEvent("ui_action",     // Event category (required)
-			                   "button_press",  // Event action (required)
-			                   "defaults_button",   // Event label
-			                   null)            // Event value
-			      .build()
-			  );		
+		// Send the event to google analytics (not used in this release)
+		/*
+		 * easyTracker.send(MapBuilder
+		 *	      .createEvent("ui_action",     // Event category (required)
+		 *	                   "button_press",  // Event action (required)
+		 *	                   "defaults_button",   // Event label
+		 *	                   null)            // Event value
+		 *	      .build()
+		 *	  );
+		 */
+		
 		// Save the default settings to frequency and speed 
 		editor.putInt("FrequencySetting", Constants.DEFAULT_FREQUENCY);
         editor.putInt("SpeedSetting", Constants.DEFAULT_SPEED);
@@ -299,7 +347,9 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener{
     @Override
     public void onStop() {
       super.onStop();
-      EasyTracker.getInstance(this).activityStop(this); 
+      
+      // Google Analytics (not used in this release)
+      // EasyTracker.getInstance(this).activityStop(this); 
     }
 }
 

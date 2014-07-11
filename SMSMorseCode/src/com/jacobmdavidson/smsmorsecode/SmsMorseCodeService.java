@@ -4,9 +4,6 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
-import com.google.analytics.tracking.android.EasyTracker;
-import com.google.analytics.tracking.android.MapBuilder;
-
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -19,6 +16,10 @@ import android.media.AudioTrack;
 import android.os.IBinder;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
+
+// Google Analytics is not used in this release
+// import com.google.analytics.tracking.android.EasyTracker;
+// import com.google.analytics.tracking.android.MapBuilder;
 
 /**
  * <p>This class instantiates a service that converts sms text messages sent via a broadcast receiver 
@@ -69,8 +70,11 @@ public class SmsMorseCodeService extends Service implements AudioTrack.OnPlaybac
 	private PhoneStateListener phoneListener;
 	private TelephonyManager telephonyManager;
 	
-	// Google analytics tracker
-	EasyTracker easyTracker = null;
+	// Counts the number of times the screen state has changed
+	private int screenStateChangeCount = 0;
+	
+	// Google analytics tracker (not used in this release)
+	// EasyTracker easyTracker = null;
 	
 	/**
 	 * This service is not bound to an activity. Everything happens in the background
@@ -93,29 +97,37 @@ public class SmsMorseCodeService extends Service implements AudioTrack.OnPlaybac
 	 */
 	@Override
 	public void onCreate() {	
-		// Instantiate the EasyTracker object
-		easyTracker = EasyTracker.getInstance(this);
+		// Instantiate the EasyTracker object (not used in this release)
+		// easyTracker = EasyTracker.getInstance(this);
 		
-		// Create a broadcast receiver that detects when the screen is turned off
+		// Create a broadcast receiver that detects when the screen is turned on or off
 		final IntentFilter theFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+		theFilter.addAction(Intent.ACTION_SCREEN_ON);
 		screenReceiver = new BroadcastReceiver(){
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				
-				if(ringerPreference == AudioManager.RINGER_MODE_VIBRATE){
-					
-					// If the ringer preference is vibrate, terminate the vibration
-					terminateVibrate();	
-				} else if (ringerPreference == AudioManager.RINGER_MODE_NORMAL){
-					
-					// if the ringer preference is normal, terminate the audio 
-					terminateAudio();
-				} else {
-					/*
-					 *  This Should never be called, if phone is in silent mode the service 
-					 *  terminates immediately. 
-					 */
-					SmsMorseCodeService.this.stopSelf();
+				// Increment the number of times the screen state has changed
+				screenStateChangeCount++;
+				
+				// If the screen state has changed twice, indicates the user wants to quit
+				if(screenStateChangeCount >= 2)
+				{
+					if(ringerPreference == AudioManager.RINGER_MODE_VIBRATE){
+						
+						// If the ringer preference is vibrate, terminate the vibration
+						terminateVibrate();	
+					} else if (ringerPreference == AudioManager.RINGER_MODE_NORMAL){
+						
+						// if the ringer preference is normal, terminate the audio 
+						terminateAudio();
+					} else {
+						/*
+						 *  This Should never be called, if phone is in silent mode the service 
+						 *  terminates immediately. 
+						 */
+						SmsMorseCodeService.this.stopSelf();
+					}
 				}
 			}
 		};
@@ -255,14 +267,16 @@ public class SmsMorseCodeService extends Service implements AudioTrack.OnPlaybac
 	 * called when the morse code track is done playing.
 	 */
 	public void playMorseCode() {
-		// Send the event to google analytics
-		easyTracker.send(MapBuilder
-			      .createEvent("service_action",     // Event category (required)
-			                   "play_message",  // Event action (required)
-			                   "message_audible",   // Event label
-			                   null)            // Event value
-			      .build()
-			  );
+		// Send the event to google analytics (not used in this release)
+		/*
+		 * easyTracker.send(MapBuilder
+		 *	      .createEvent("service_action",     // Event category (required)
+		 *	                   "play_message",  // Event action (required)
+		 *	                   "message_audible",   // Event label
+		 *	                   null)            // Event value
+		 *	      .build()
+		 *	  );
+		 */
 		
 		// Load the morseCodeTrack with the body of the message
 		morseCodeAudioTrack.loadAudioTrack(body);
@@ -349,14 +363,16 @@ public class SmsMorseCodeService extends Service implements AudioTrack.OnPlaybac
      * next message at the end of the vibration, and vibrates the morse code track
      */
 	public void vibrateMorseCode(){
-		// Send the event to google analytics
-		easyTracker.send(MapBuilder
-			      .createEvent("service_action",     // Event category (required)
-			                   "play_message",  // Event action (required)
-			                   "message_vibrate",   // Event label
-			                   null)            // Event value
-			      .build()
-			  );		
+		// Send the event to google analytics (not used in this release)
+		/*
+		 * easyTracker.send(MapBuilder
+		 *	      .createEvent("service_action",     // Event category (required)
+		 *	                   "play_message",  // Event action (required)
+		 *	                   "message_vibrate",   // Event label
+		 *	                   null)            // Event value
+		 *	      .build()
+		 *	  );		
+		 */	
 				
 		// Load the body into the morse code track
 		morseCodeVibrateTrack.loadVibrateTrack(body);

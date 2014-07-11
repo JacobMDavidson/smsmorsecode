@@ -1,0 +1,59 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="#D1FFFF">
+	<LinearLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:orientation="vertical" >
+
+		<TextView
+		    android:id="@+id/chartTextView1"
+		    android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+		    android:layout_marginTop="10dip"
+		    android:layout_marginLeft="10dip"
+	    	android:layout_marginRight="10dip"
+		    android:text="@string/referenceChartTitle"
+		    android:textSize="@dimen/activity_title_size" />
+	    
+	    <TextView
+		    android:id="@+id/chartTextView2"
+		    android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+		    android:layout_marginTop="10dip"
+		    android:layout_marginLeft="10dip"
+	    	android:layout_marginRight="10dip"
+		    android:text="@string/aboutParagraphTwo"
+		    android:textSize="@dimen/activity_text_size" />		
+
+
+		<LinearLayout
+		    android:id="@+id/linearLayout2"
+		    android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+		    android:orientation="horizontal"
+		    android:layout_marginTop="10dip"
+		    android:layout_marginLeft="10dip"
+		    android:layout_marginRight="10dip"
+		    android:layout_marginBottom="20dip" >
+			    <TextView
+			        android:id="@+id/chartTextView3"
+			        android:layout_width="0dp"
+			        android:layout_weight="1"
+			        android:layout_height="wrap_content"
+			        android:text="@string/referenceLeft" 
+			        android:layout_gravity="left"
+			        android:textSize="@dimen/activity_title_size"/>
+		
+			    <TextView
+			        android:id="@+id/chartTextView5"
+			        android:layout_width="0dp"
+			        android:layout_weight="1"
+			        android:layout_height="wrap_content"
+			        android:text="@string/referenceRight"
+			        android:layout_gravity="right"
+			        android:textSize="@dimen/activity_title_size" />
+	  	</LinearLayout> 	
+	</LinearLayout>
+</ScrollView>

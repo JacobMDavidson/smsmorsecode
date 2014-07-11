@@ -12,8 +12,11 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
 	<uses-permission android:name="android.permission.VIBRATE" />
 	<uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+	
+	<!-- Permissions for google analytics, not used in this release
 	<uses-permission android:name="android.permission.INTERNET"/>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+	-->
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
@@ -26,6 +29,22 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name="com.jacobmdavidson.smsmorsecode.ActivityAbout"
+            android:label="@string/about_name"
+            android:parentActivityName="com.jacobmdavidson.smsmorsecode.MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.jacobmdavidson.smsmorsecode.MainActivity" />
+        </activity>
+        <activity
+            android:name="com.jacobmdavidson.smsmorsecode.ActivityChart"
+            android:label="@string/chart_name"
+            android:parentActivityName="com.jacobmdavidson.smsmorsecode.MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.jacobmdavidson.smsmorsecode.MainActivity" />
         </activity>
         <receiver android:name="com.jacobmdavidson.smsmorsecode.SmsMorseCodeReceiver" android:enabled="false">
         <intent-filter >                

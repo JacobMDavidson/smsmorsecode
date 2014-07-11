@@ -2,7 +2,10 @@
 <resources>
 
     <string name="app_name">SMorSe</string>
-    <string name="action_settings">Settings</string>
+    <string name="about_name">About SMorSe</string>
+    <string name="action_settings">Info</string>
+    <string name="chart_name">Morse Code Chart</string>
+    <string name="action_chart">Chart</string>    
     <string name="enable">Convert SMS to Morse Code</string>
     <string name="settings">Settings:</string>
     <string name="frequencyLabel">Frequency:</string>
@@ -13,5 +16,86 @@
     <string name="button">Test Settings</string>
     <string name="buttonDefault">Default</string>
     <string name="testMessage">Test:</string>
-
+    <string name="aboutTitle"><b><u>About SMorSe:</u></b></string>
+    <string name="aboutContact"><b><u>Contact Information:</u></b>
+        \n\nIf you have any questions, concerns or recommendations, feel free to contact us at 
+        smsmorsecode@gmail.com.</string>
+    <string name="aboutParagraphOne">SMorSe is an application that converts incoming text messages 
+        to morse code based on the ITU&#8211;R M.1677&#8211;1 recommendation. Simply enable the app, 
+        and all incoming text messages will be converted to morse code (even if the app is not 
+        running). If the ringer mode is set to normal, the message is played at the frequency and 
+        speed settings chosen. If the ringer mode is set to vibrate, the message is vibrated at the 
+        speed setting chosen. Each message begins with the starting signal ( <b>&#8212;</b> &#8226; 
+        <b>&#8212;</b> &#8226; <b>&#8212;</b> ), after which the message is played. The cross signal 
+        ( &#8226; <b>&#8212;</b> &#8226; <b>&#8212;</b> &#8226; ) indicates the end of the message.
+        </string>
+    <string name="aboutParagraphTwo">1. Length of a dot is one unit
+        \n2. Length of a dash is three units
+        \n3. Space between parts of the same letter is one unit
+        \n4. Space between letters is three units
+        \n5. Space between words is seven units.</string>
+    <string name="referenceChartTitle"><b><u>Morse Code Reference Chart:</u></b></string>
+    <string name="referenceLeft">A &#8594; &#8226; <b>&#8212;</b>
+        \nB &#8594; <b>&#8212;</b> &#8226; &#8226; &#8226;
+        \nC &#8594; <b>&#8212;</b> &#8226; <b>&#8212;</b> &#8226;
+        \nD &#8594; <b>&#8212;</b> &#8226; &#8226;
+        \nE &#8594; &#8226;
+        \nF &#8594; &#8226; &#8226; <b>&#8212;</b> &#8226;
+        \nG &#8594; <b>&#8212;</b> <b>&#8212;</b> &#8226;
+        \nH &#8594; &#8226; &#8226; &#8226; &#8226;
+        \nI &#8594; &#8226; &#8226;
+        \nJ &#8594; &#8226; <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b>
+        \nK &#8594; <b>&#8212;</b> &#8226; <b>&#8212;</b>
+        \nL &#8594; &#8226; <b>&#8212;</b> &#8226; &#8226;
+        \nM &#8594; <b>&#8212;</b> <b>&#8212;</b>
+        \nN &#8594; <b>&#8212;</b> &#8226;
+        \nO &#8594; <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b>
+        \nP &#8594; &#8226; <b>&#8212;</b> <b>&#8212;</b> &#8226;
+        \nQ &#8594; <b>&#8212;</b> <b>&#8212;</b> &#8226; <b>&#8212;</b>
+        \nR &#8594; &#8226; <b>&#8212;</b> &#8226;
+        \nS &#8594; &#8226; &#8226; &#8226;
+        \nT &#8594; <b>&#8212;</b>
+        \nU &#8594; &#8226; &#8226; <b>&#8212;</b>
+        \nV &#8594; &#8226; &#8226; &#8226; <b>&#8212;</b>
+        \nW &#8594; &#8226; <b>&#8212;</b> <b>&#8212;</b>
+        \nX &#8594; <b>&#8212;</b> &#8226; &#8226; <b>&#8212;</b>
+        \nY &#8594; <b>&#8212;</b> &#8226; <b>&#8212;</b> <b>&#8212;</b>
+        \nZ &#8594; <b>&#8212;</b> <b>&#8212;</b> &#8226; &#8226;</string>
+    <string name="referenceRight">0 &#8594; <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b>
+        \n1 &#8594; &#8226; <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b>
+        \n2 &#8594; &#8226; &#8226; <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b>
+        \n3 &#8594; &#8226; &#8226; &#8226; <b>&#8212;</b> <b>&#8212;</b>
+        \n4 &#8594; &#8226; &#8226; &#8226; &#8226; <b>&#8212;</b>
+        \n5 &#8594; &#8226; &#8226; &#8226; &#8226; &#8226;
+        \n6 &#8594; <b>&#8212;</b> &#8226; &#8226; &#8226; &#8226;
+        \n7 &#8594; <b>&#8212;</b> <b>&#8212;</b> &#8226; &#8226; &#8226;
+        \n8 &#8594; <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b> &#8226; &#8226;
+        \n9 &#8594; <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b> &#8226;
+        \n! &#8594; <b>&#8212;</b> &#8226; <b>&#8212;</b> &#8226; <b>&#8212;</b> <b>&#8212;</b>
+        \n“ &#8594; &#8226; <b>&#8212;</b> &#8226; &#8226; <b>&#8212;</b> &#8226;
+        \n$ &#8594; &#8226; &#8226; &#8226; <b>&#8212;</b> &#8226; &#8226; <b>&#8212;</b>
+        \n&#38; &#8594; &#8226; <b>&#8212;</b> &#8226; &#8226; &#8226;
+        \n‘ &#8594; &#8226; <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b> &#8226;
+        \n( &#8594; <b>&#8212;</b> &#8226; <b>&#8212;</b> <b>&#8212;</b> &#8226;
+        \n) &#8594; <b>&#8212;</b> &#8226; <b>&#8212;</b> <b>&#8212;</b> &#8226; <b>&#8212;</b>
+        \n+ &#8594; &#8226; <b>&#8212;</b> &#8226; <b>&#8212;</b> &#8226;
+        \n, &#8594; <b>&#8212;</b> <b>&#8212;</b> &#8226; &#8226; <b>&#8212;</b> <b>&#8212;</b>
+        \n- &#8594; <b>&#8212;</b> &#8226; &#8226; &#8226; &#8226; <b>&#8212;</b>
+        \n&#8226; &#8594; &#8226; <b>&#8212;</b> &#8226; <b>&#8212;</b> &#8226; <b>&#8212;</b>
+        \n/ &#8594; <b>&#8212;</b> &#8226; &#8226; <b>&#8212;</b> &#8226;
+        \n: &#8594; <b>&#8212;</b> <b>&#8212;</b> <b>&#8212;</b> &#8226; &#8226; &#8226;
+        \n; &#8594; <b>&#8212;</b> &#8226; <b>&#8212;</b> &#8226; <b>&#8212;</b> &#8226;
+        \n= &#8594; <b>&#8212;</b> &#8226; &#8226; &#8226; <b>&#8212;</b>
+        \n? &#8594; &#8226; &#8226; <b>&#8212;</b> <b>&#8212;</b> &#8226; &#8226;
+        \n@ &#8594; &#8226; <b>&#8212;</b> <b>&#8212;</b> &#8226; <b>&#8212;</b> &#8226;
+        \nST &#8594; <b>&#8212;</b> &#8226; <b>&#8212;</b> &#8226; <b>&#8212;</b></string>
+    <string name="notableFeatures"><b><u>Application Features:</u></b>
+        \n\nThe application does not have to be running to receive text messages in morse code.
+        \n\nThe speed setting, in words per minute, is based on the typical convention that the word “PARIS” represents the average word length.
+        \n\nThe frequency setting adjusts the pitch of the tone used for audible morse code playback
+        \n\nAn incoming message can be silenced by turning your phone’s screen on and off by pressing the power button twice.
+        \n\nIf a call is received while a message is playing, the message will be silenced to let the call go through.
+        \n\nWhen a call is active, incoming messages will not be played.
+        \n\nIf music is playing when a message is received, the music will be paused during message playback. Music will resume upon message playback completion.
+        </string>
 </resources>
