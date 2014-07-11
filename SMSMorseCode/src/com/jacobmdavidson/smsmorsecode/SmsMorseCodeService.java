@@ -113,11 +113,7 @@ public class SmsMorseCodeService extends Service implements AudioTrack.OnPlaybac
 				// If the screen state has changed twice, indicates the user wants to quit
 				if(screenStateChangeCount >= 2)
 				{
-					if(ringerPreference == AudioManager.RINGER_MODE_VIBRATE){
-						
-						// If the ringer preference is vibrate, terminate the vibration
-						terminateVibrate();	
-					} else if (ringerPreference == AudioManager.RINGER_MODE_NORMAL){
+					if (ringerPreference == AudioManager.RINGER_MODE_NORMAL){
 						
 						// if the ringer preference is normal, terminate the audio 
 						terminateAudio();
@@ -128,6 +124,11 @@ public class SmsMorseCodeService extends Service implements AudioTrack.OnPlaybac
 						 */
 						SmsMorseCodeService.this.stopSelf();
 					}
+				
+				// Else if in vibrate, terminate on one screen change
+				} else if (ringerPreference == AudioManager.RINGER_MODE_VIBRATE){
+					
+					terminateVibrate();	
 				}
 			}
 		};
