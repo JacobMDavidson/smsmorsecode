@@ -125,9 +125,9 @@ public class SmsMorseCodeService extends Service implements AudioTrack.OnPlaybac
 						SmsMorseCodeService.this.stopSelf();
 					}
 				
-				// Else if in vibrate, terminate on one screen change
-				} else if (ringerPreference == AudioManager.RINGER_MODE_VIBRATE){
-					
+				// Else if in vibrate and the screen was turned off, terminate on one screen change
+				} else if (ringerPreference == AudioManager.RINGER_MODE_VIBRATE && 
+						intent.getAction() == Intent.ACTION_SCREEN_OFF){
 					terminateVibrate();	
 				}
 			}

@@ -21,8 +21,8 @@
         \n\nIf you have any questions, concerns or recommendations, feel free to contact us at 
         smsmorsecode@gmail.com.</string>
     <string name="aboutParagraphOne">SMorSe is an application that converts incoming text messages 
-        to morse code based on the ITU&#8211;R M.1677&#8211;1 recommendation. Simply enable the app, 
-        and all incoming text messages will be converted to morse code (even if the app is not 
+        to Morse code based on the ITU&#8211;R M.1677&#8211;1 recommendation. Simply enable the app, 
+        and all incoming text messages will be converted to Morse code (even if the app is not 
         running). If the ringer mode is set to normal, the message is played at the frequency and 
         speed settings chosen. If the ringer mode is set to vibrate, the message is vibrated at the 
         speed setting chosen. Each message begins with the starting signal ( <b>&#8212;</b> &#8226; 
@@ -90,9 +90,9 @@
         \n@ &#8594; &#8226; <b>&#8212;</b> <b>&#8212;</b> &#8226; <b>&#8212;</b> &#8226;
         \nST &#8594; <b>&#8212;</b> &#8226; <b>&#8212;</b> &#8226; <b>&#8212;</b></string>
     <string name="notableFeatures"><b><u>Application Features:</u></b>
-        \n\nThe application does not have to be running to receive text messages in morse code.
+        \n\nThe application does not have to be running to receive text messages in Morse code.
         \n\nThe speed setting, in words per minute, is based on the typical convention that the word “PARIS” represents the average word length.
-        \n\nThe frequency setting adjusts the pitch of the tone used for audible morse code playback
+        \n\nThe frequency setting adjusts the pitch of the tone used for audible Morse code playback
         \n\nAn incoming message can be silenced by turning your phone’s screen on and off by pressing the power button twice.
         \n\nIf a call is received while a message is playing, the message will be silenced to let the call go through.
         \n\nWhen a call is active, incoming messages will not be played.
