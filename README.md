@@ -13,3 +13,5 @@
 #### Permissions
 
 This app uses the RECEIVE_SMS, VIBRATE, and READ_PHONE_STATE permissions. RECEIVE_SMS is required to read incoming text messages, and VIBRATE is used to vibrate those messages as morse code when the phone is set to vibrate. The READ_PHONE_STATE permission is used to stop the service when the user is on a call, or when a call is received during morse code playback.
+
+**This application was built in Eclipse using Android Development Tools. Feel free to fork the repo and tweak it to your liking.**
